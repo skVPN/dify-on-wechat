@@ -46,6 +46,7 @@ class ChatChannel(Channel):
             context["origin_ctype"] = ctype
         # context首次传入时，receiver是None，根据类型设置receiver
         first_in = "receiver" not in context
+        print(context,"receiverreceiverreceiverreceiverreceiver")
         # 群名匹配过程，设置session_id和receiver
         if first_in:  # context首次传入时，receiver是None，根据类型设置receiver
             config = conf()
@@ -356,28 +357,28 @@ class ChatChannel(Channel):
     def consume(self):
         while True:
             with self.lock:
-                session_ids = list(self.sessions.keys())
+                session_ids = list(self.sessions.keys())  # 获取所有session_id
             for session_id in session_ids:
                 with self.lock:
-                    context_queue, semaphore = self.sessions[session_id]
-                if semaphore.acquire(blocking=False):  # 等线程处理完毕才能删除
-                    if not context_queue.empty():
-                        context = context_queue.get()
-                        logger.debug("[chat_channel] consume context: {}".format(context))
-                        future: Future = handler_pool.submit(self._handle, context)
-                        future.add_done_callback(self._thread_pool_callback(session_id, context=context))
+                    context_queue, semaphore = self.sessions[session_id]  # 获取当前session的队列和信号量
+                if semaphore.acquire(blocking=False):  # 尝试获取信号量，非阻塞
+                    if not context_queue.empty():  # 如果队列不为空
+                        context = context_queue.get()  # 从队列中取出一个context
+                        logger.debug("[chat_channel] consume context: {}-session_id:{}".format(context,session_id))  # 记录日志
+                        future: Future = handler_pool.submit(self._handle, context)  # 提交任务到线程池
+                        future.add_done_callback(self._thread_pool_callback(session_id, context=context))  # 设置任务完成回调
                         with self.lock:
                             if session_id not in self.futures:
-                                self.futures[session_id] = []
-                            self.futures[session_id].append(future)
-                    elif semaphore._initial_value == semaphore._value + 1:  # 除了当前，没有任务再申请到信号量，说明所有任务都处理完毕
+                                self.futures[session_id] = []  # 初始化futures列表
+                            self.futures[session_id].append(future)  # 将future添加到列表
+                    elif semaphore._initial_value == semaphore._value + 1:  # 如果信号量初始值等于当前值加1，说明所有任务都处理完毕
                         with self.lock:
-                            self.futures[session_id] = [t for t in self.futures[session_id] if not t.done()]
-                            assert len(self.futures[session_id]) == 0, "thread pool error"
-                            del self.sessions[session_id]
+                            self.futures[session_id] = [t for t in self.futures[session_id] if not t.done()]  # 移除已完成的任务
+                            assert len(self.futures[session_id]) == 0, "thread pool error"  # 确保没有未完成的任务
+                            del self.sessions[session_id]  # 删除session
                     else:
-                        semaphore.release()
-            time.sleep(0.2)
+                        semaphore.release()  # 释放信号量
+            time.sleep(0.2)  # 休眠0.2秒
 
     # 取消session_id对应的所有任务，只能取消排队的消息和已提交线程池但未执行的任务
     def cancel_session(self, session_id):

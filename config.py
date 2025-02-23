@@ -208,6 +208,14 @@ available_setting = {
     "Minimax_group_id": "",
     "Minimax_base_url": "",
     "web_port": 9899,
+
+    "email_username":"x@gmail.com",
+    "email_password":"xx",
+    "smtp_server":"smtp.gmail.com",
+    "smtp_port":587,
+    "imap_server":"imap.gmail.com",
+    "imap_port":993
+
 }
 
 
