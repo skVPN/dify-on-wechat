@@ -12,7 +12,10 @@ def create_channel(channel_type) -> Channel:
     :return: channel instance
     """
     ch = Channel()
-    if channel_type == "email":
+    if channel_type == "chatwork":
+        from channel.custom.chatwork.chatwork_channel import ChatWorkChannel
+        ch = ChatWorkChannel()
+    elif channel_type == "email":
         from channel.custom.email.email_channel import EmailChatChannel
         ch = EmailChatChannel()
     elif channel_type == "wx":

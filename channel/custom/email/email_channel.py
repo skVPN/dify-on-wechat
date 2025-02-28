@@ -1,7 +1,3 @@
-import os
-import time
-import json
-import web
 import threading
 
 from bridge.context import Context, ContextType
@@ -53,9 +49,6 @@ class EmailChatChannel(ChatChannel):
         # 如果原来的self.app_id为空或登录后获取到新的app_id，保存配置
 
 
-    
-    def compose_context(self, ctype: ContextType, content: str, isgroup: bool = False, msg=None):
-        pass
 
     def send(self, reply: Reply, context: Context):
         receiver = context["receiver"]
