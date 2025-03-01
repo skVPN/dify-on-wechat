@@ -54,23 +54,40 @@ class ChatWorkChannel(ChatChannel):
             'avatar_image_url': 'https://appdata.chatwork.com/avatar/ico_default_blue.png'},
          'body': '有\n看看', 'send_time': 1740740661, 'update_time': 0}
         """
-        body=origin_msg['body']
-        from_=origin_msg['account']['name']
-        if from_ == self.client.my_name or origin_msg['send_time']<self.last_msg_time:  # 自己的和过去的不用回复
-            return
-        self.last_msg_time = origin_msg['send_time']
-        room_id=origin_msg['room_id']
-        msg= SimpleNamespace(from_user_nickname=from_,other_user_nickname=from_,other_user_id=from_,actual_user_id=from_,actual_user_nickname=from_)
-        msg.Data ={"MsgType": 1, "Content": {"string": body}}
 
+        room_id=None
+        body=None
+        msg =None
+        context_type =ContextType.TEXT
+
+        if 'message_id' in origin_msg:  # 处理消息 
+            from_=origin_msg['account']['name'] 
+            if from_ == self.client.my_name or origin_msg['send_time']<self.last_msg_time:  # 自己的和过去的不用回复
+                return
+            body=origin_msg['body']
+                      
+            self.last_msg_time = origin_msg['send_time']
+            room_id=origin_msg['room_id']
+            msg= SimpleNamespace(from_user_nickname=from_,other_user_nickname=from_,other_user_id=from_,actual_user_id=from_,actual_user_nickname=from_)
+            msg.Data ={"MsgType": 1, "Content": {"string": body}}
+            receiver=room_id
+
+        elif 'request_id' in origin_msg: # 处理好友申请
+#[{'request_id': 38566451, 'account_id': 10124706, 'message': 'xxx', 'name': 'chenshi', 'chatwork_id': '', 'organization_id': 7810521, 'organization_name': '', 'department': '', 'avatar_image_url': 'https://appdata.chatwork.com/avatar/ico_default_blue.png'}]
+
+            context_type =ContextType.ACCEPT_FRIEND
+            room_id = origin_msg['request_id']
+            body = origin_msg['request_id']
+            msg = origin_msg['message']
+            receiver=  origin_msg['name']
         context = self._compose_context(
-        ContextType.TEXT,
+        context_type,
         body,
         isgroup=False,
         msg=msg,
-        receiver=room_id,
+        receiver=receiver,
         session_id=room_id
-        )
+        )        
         self.produce(context)
 
     def send(self, reply: Reply, context: Context):
@@ -78,3 +95,14 @@ class ChatWorkChannel(ChatChannel):
         if reply.type==ReplyType.TEXT:
             rely_msg = reply.content
             self.client.send_msg(room_id, rely_msg)
+        if reply.type in (ReplyType.IMAGE,ReplyType.VOICE,ReplyType.FILE):
+            rely_msg = reply.content
+            # self.client.send_file(room_id, file_path, file_name,  message)
+
+    def _build_friend_request_reply(self,context):
+        """处理好友申请"""
+        print("context",context)
+        request_id = context['content']
+        if self.client.client.server.approve_incoming_requests(request_id):
+            logger.info(f"好友申请通过,from:{context['receiver']},text:{context['msg']}")
+            time.sleep(5)

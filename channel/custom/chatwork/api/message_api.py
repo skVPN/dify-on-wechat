@@ -33,9 +33,11 @@ class MessageApi:
                                 logger.info(f"recive msg:{message}")
                                 message['room_id'] = room_id
                                 parse_fuc(message)
-            
-            time.sleep(5)
+            """对好友申请进行通过"""
+            income_requests =self.server.get_incoming_requests()
+            if income_requests:
+                for message in income_requests:
+                    parse_fuc(message)
 
-                
-                
-        return "success"
+    def post_file(self,room_id, file_path, file_name,  message):
+        return self.server.send_file(room_id, file_path, file_name,  message)
