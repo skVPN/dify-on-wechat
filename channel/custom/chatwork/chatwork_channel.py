@@ -78,13 +78,13 @@ class ChatWorkChannel(ChatChannel):
             context_type =ContextType.ACCEPT_FRIEND
             room_id = origin_msg['request_id']
             body = origin_msg['request_id']
-            msg = origin_msg['message']
+            account_id = origin_msg['account_id']
             receiver=  origin_msg['name']
         context = self._compose_context(
         context_type,
         body,
         isgroup=False,
-        msg=msg,
+        msg=account_id,
         receiver=receiver,
         session_id=room_id
         )        
@@ -105,4 +105,5 @@ class ChatWorkChannel(ChatChannel):
         request_id = context['content']
         if self.client.client.server.approve_incoming_requests(request_id):
             logger.info(f"好友申请通过,from:{context['receiver']},text:{context['msg']}")
+            self.client.name_map.update({context['msg']:context['receiver']})
             time.sleep(5)

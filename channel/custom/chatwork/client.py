@@ -31,8 +31,12 @@ class ChatWorkClient:
         self.my_name = my_name
         self.login()
         self.message_api = MessageApi(self.client.server)
-        self.name_id_map_file="name_id_map.json"
-        
+        self.name_id_map_file="name_id_map.json"        
+        if not os.path.exists(self.name_id_map_file):
+            self.name_map=self.get_contacts()
+        else:
+            with shelve.open(self.name_id_map_file) as shelf:
+                self.name_map = dict(shelf)
 
 
     # Login API methods
@@ -56,31 +60,28 @@ class ChatWorkClient:
         # [{'account_id': 10124706, 'room_id': 388277412, 'name': 'chenshi', 'chatwork_id': '', 'organization_id': 7810521, 'organization_name': '', 'department': '', 'avatar_image_url': 'https://appdata.chatwork.com/avatar/ico_default_blue.png'}]
         info = self.message_api.server.get_contacts()
         if info:
-            data= { info["account_id"]:info["name"] for i in info}
-
+            data= { str(i["account_id"]):i["name"] for i in info}
+            print("id_name site",data)
             with shelve.open(self.name_id_map_file) as shelf:
                 shelf.update(data)
-            return data
+                ret =  dict(shelf)
+                return  ret
     def get_name_id(self,arg_str):
         """先从本地获取，如果没有则走网络请求"""
         ret = None
         now_get=False
-        if not os.path.exists(self.name_id_map_file):
-            self.get_contacts()
-            now_get=True
+        arg_str = str(arg_str)
         for _ in range(2):
-            
-            with shelve.open(self.name_id_map_file) as shelf:
-                loaded_data = dict(shelf)
+
             if arg_str.isdigit(): # id
-                ret = loaded_data.get(arg_str)
+                ret = self.name_map.get(arg_str)
             else:
-                reversed_dict = dict(zip(loaded_data.values(), loaded_data.keys()))
+                reversed_dict = dict(zip(self.name_map.values(), self.name_map.keys()))
                 ret = reversed_dict.get(arg_str)
             if ret:
                 break
             if  not now_get:  # 刚获取就不用再去获取一次了
-                self.get_contacts()  
+                self.name_map=self.get_contacts()  
                 continue
         return ret 
             
