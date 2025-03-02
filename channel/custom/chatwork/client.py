@@ -84,5 +84,9 @@ class ChatWorkClient:
                 self.name_map=self.get_contacts()  
                 continue
         return ret 
-            
+    def name_to_id(self,name_str):
+        return self.get_name_id(name_str)
+    def c (self,id_str):
+        return self.id_to_name (id_str)
+        
         
