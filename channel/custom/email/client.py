@@ -24,22 +24,21 @@ class EmailchatClient:
 
     注意: 在使用任何方法之前，请确保你已经正确初始化了客户端，并且有有效的 base_url 和 token。
     """
-    def __init__(self, username, password,smtp_server, smtp_port,imap_server,imap_port):
-        self.client = LoginApi(username, password,smtp_server, smtp_port,imap_server,imap_port)
-        self.message_api = MessageApi(self.client.server)
 
+    def __init__(self, username, password, smtp_server, smtp_port, imap_server, imap_port):
+        self.client = LoginApi(username, password, smtp_server, smtp_port, imap_server, imap_port)
+        self.message_api = MessageApi(self.client.server)
 
     # Login API methods
     def login(self):
         """登录"""
         return self.client.login()
 
-    def get_unread_msg(self,_compose_context,product_fuc):
+    def get_unread_msg(self, _compose_context, product_fuc):
         """获取未读消息"""
-        return self.message_api.revices(_compose_context,product_fuc)
+        return self.message_api.revices(_compose_context, product_fuc)
 
-    def send_msg(self,  to_email, subject, body):
+    def send_msg(self, to_email, subject, body):
         """发送邮件"""
         from_email = self.client.username
-        return self.message_api.post_text( from_email, to_email, subject, body)
-    
+        return self.message_api.post_text(from_email, to_email, subject, body)

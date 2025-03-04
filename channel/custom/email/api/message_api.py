@@ -10,48 +10,49 @@ from email.header import decode_header
 from common.log import logger
 from bridge.context import ContextType
 
+
 class MessageApi:
     def __init__(self, server):
         self.server = server
 
-    def post_text(self,  from_email, to_email, subject, body, attachments=None):
+    def post_text(self, from_email, to_email, subject, body, attachments=None):
         """发送邮件消息"""
         if self.server.smtp is None:
-            print('Not logged in')
+            print("Not logged in")
             return
 
         msg = MIMEMultipart()
-        msg['From'] = from_email
-        msg['To'] = to_email
-        msg['Subject'] = subject
+        msg["From"] = from_email
+        msg["To"] = to_email
+        msg["Subject"] = subject
 
-        msg.attach(MIMEText(body, 'plain'))
+        msg.attach(MIMEText(body, "plain"))
 
         if attachments:
             for filename in attachments:
                 try:
-                    with open(filename, 'rb') as attachment:
-                        part = MIMEBase('application', 'octet-stream')
+                    with open(filename, "rb") as attachment:
+                        part = MIMEBase("application", "octet-stream")
                         part.set_payload(attachment.read())
                         encoders.encode_base64(part)
-                        part.add_header('Content-Disposition', f'attachment; filename= {filename}')
+                        part.add_header("Content-Disposition", f"attachment; filename= {filename}")
                         msg.attach(part)
                 except Exception as e:
-                    print(f'Failed to attach file {filename}: {e}')
+                    print(f"Failed to attach file {filename}: {e}")
 
         try:
             self.server.smtp.sendmail(from_email, to_email, msg.as_string())
-            logger.info('Email sent successfully')
+            logger.info("Email sent successfully")
         except Exception as e:
-            logger.exception(f'Failed to send email: {e}')
+            logger.exception(f"Failed to send email: {e}")
 
-    def revices(self,_compose_context,product_fuc):
+    def revices(self, _compose_context, product_fuc):
         """接收邮件"""
-         
+
         while True:
             time.sleep(1)
             # 4. 搜索未读邮件 (可以根据需要修改搜索条件)
-            self.server.imap.select('INBOX')  # 这将切换到选中的邮箱状态
+            self.server.imap.select("INBOX")  # 这将切换到选中的邮箱状态
             status, data = self.server.imap.search(None, "UNSEEN")  # 搜索未读邮件
             if status != "OK":
                 logger.error("搜索邮件失败")
@@ -62,7 +63,7 @@ class MessageApi:
             mail_ids = data[0].split()
             logger.info(f"收件中:{mail_ids}")
             # 5. 获取并解析邮件
-            for i,mail_id in enumerate(mail_ids):
+            for i, mail_id in enumerate(mail_ids):
                 status, data = self.server.imap.fetch(mail_id, "(RFC822)")
                 if status != "OK":
                     print(f"获取邮件 {mail_id} 失败")
@@ -94,20 +95,12 @@ class MessageApi:
                             print(f"正文: {body}")
                 else:
                     body = msg.get_payload(decode=True).decode()
-                  
-                content=f"{i}: 主题: {subject}-发件人: {from_},body:{body}"
-                msg= SimpleNamespace(from_user_nickname=from_,other_user_nickname=from_,other_user_id=from_,actual_user_id=from_,actual_user_nickname=from_)
-                msg.Data ={"MsgType": 1, "Content": {"string": body}}
 
-                context = _compose_context(
-                ContextType.TEXT,
-                content,
-                isgroup=False,
-                msg=msg,
-                receiver=from_,
-                session_id=from_
-                )
+                content = f"{i}: 主题: {subject}-发件人: {from_},body:{body}"
+                msg = SimpleNamespace(from_user_nickname=from_, other_user_nickname=from_, other_user_id=from_, actual_user_id=from_, actual_user_nickname=from_)
+                msg.Data = {"MsgType": 1, "Content": {"string": body}}
+
+                context = _compose_context(ContextType.TEXT, content, isgroup=False, msg=msg, receiver=from_, session_id=from_)
                 product_fuc(context)
-                
-                
+
         return "success"

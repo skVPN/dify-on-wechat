@@ -5,8 +5,8 @@ from common.log import logger
 
 
 class Chatwork(object):
-        # https://blog-zh-tw.chatwork.com/2015/10/endpointmemycontactsrooms.html
-    __API_URL_BASE = 'https://api.chatwork.com/v2'
+    # https://blog-zh-tw.chatwork.com/2015/10/endpointmemycontactsrooms.html
+    __API_URL_BASE = "https://api.chatwork.com/v2"
 
     def __init__(self, api_token, api_base_url=__API_URL_BASE):
         """
@@ -17,11 +17,11 @@ class Chatwork(object):
         self.api_base_url = api_base_url
         self.api_key = api_token
         self.endpoint = api_base_url
-        self.headers = {'X-ChatWorkToken': self.api_key}
+        self.headers = {"X-ChatWorkToken": self.api_key}
         self.request_timeout = 120
         self.session = requests.Session()
         retries = Retry(total=5, backoff_factor=0.5, status_forcelist=[502, 503, 504])
-        self.session.mount('http://', HTTPAdapter(max_retries=retries))
+        self.session.mount("http://", HTTPAdapter(max_retries=retries))
 
     def get_me(self):
         """
@@ -29,11 +29,11 @@ class Chatwork(object):
         :return: your account information (json)
         """
         try:
-            get_url = '{}/me'.format(self.endpoint)
+            get_url = "{}/me".format(self.endpoint)
             response = requests.get(get_url, headers=self.headers)
             return response.json()
         except Exception as ex:
-            logger.debug('Get me error - {}'.format(ex))
+            logger.debug("Get me error - {}".format(ex))
 
     def get_my_status(self):
         """
@@ -41,11 +41,11 @@ class Chatwork(object):
         :return: the number of: unread messages, unread To messages, and unfinished tasks (json)
         """
         try:
-            get_url = '{}/my/status'.format(self.endpoint)
+            get_url = "{}/my/status".format(self.endpoint)
             response = requests.get(get_url, headers=self.headers)
             return response.json()
         except Exception as ex:
-            logger.debug('Get my status error - {}'.format(ex))
+            logger.debug("Get my status error - {}".format(ex))
 
     def get_my_tasks(self):
         """
@@ -53,11 +53,11 @@ class Chatwork(object):
         :return: list of task if there is any otherwise a json error (json/json error)
         """
         try:
-            get_url = '{}/my/tasks?'.format(self.endpoint)
+            get_url = "{}/my/tasks?".format(self.endpoint)
             response = requests.get(get_url, headers=self.headers)
             return response.json()
         except Exception as ex:
-            logger.debug('Get my tasks error - {}'.format(ex))
+            logger.debug("Get my tasks error - {}".format(ex))
 
     def get_contacts(self):
         """
@@ -65,11 +65,11 @@ class Chatwork(object):
         :return: list of your contacts (json)
         """
         try:
-            get_url = '{}/contacts'.format(self.endpoint)
+            get_url = "{}/contacts".format(self.endpoint)
             response = requests.get(get_url, headers=self.headers)
             return response.json()
         except Exception as ex:
-            logger.debug('Get contacts error - {}'.format(ex))
+            logger.debug("Get contacts error - {}".format(ex))
 
     def get_rooms(self):
         """
@@ -77,11 +77,11 @@ class Chatwork(object):
         :return: list of all rooms (json)
         """
         try:
-            get_url = '{}/rooms'.format(self.endpoint)
+            get_url = "{}/rooms".format(self.endpoint)
             response = requests.get(get_url, headers=self.headers)
             return response.content, response.json()
         except Exception as ex:
-            logger.debug('Get rooms error - {}'.format(ex))
+            logger.debug("Get rooms error - {}".format(ex))
 
     def send_message(self, room_id, message):
         """
@@ -91,14 +91,14 @@ class Chatwork(object):
         :return: response 200 if it was successful
         """
         try:
-            post_message_url = '{}/rooms/{}/messages'.format(self.endpoint, room_id, message)
-            params = {'body': message}
+            post_message_url = "{}/rooms/{}/messages".format(self.endpoint, room_id, message)
+            params = {"body": message}
             response = requests.post(post_message_url, headers=self.headers, params=params)
             return response
         except Exception as ex:
-            logger.debug('Send message error - {}'.format(ex))
+            logger.debug("Send message error - {}".format(ex))
 
-    def send_file(self, room_id, file_path, file_name,  message):
+    def send_file(self, room_id, file_path, file_name, message):
         """
         Send a file with message  to a chat.
         :param room_id: Target chat's room id (int)
@@ -108,12 +108,12 @@ class Chatwork(object):
         :return: response 200 if it was successful
         """
         try:
-            message_url = '{}/rooms/{}/files'.format(self.endpoint, room_id)
-            files = {'file': (file_name, open(file_path, 'rb')), 'message': (None, message)}
+            message_url = "{}/rooms/{}/files".format(self.endpoint, room_id)
+            files = {"file": (file_name, open(file_path, "rb")), "message": (None, message)}
             response = requests.post(message_url, headers=self.headers, files=files)
             return response
         except Exception as ex:
-            logger.debug('Send file error - {}'.format(ex))
+            logger.debug("Send file error - {}".format(ex))
 
     def get_rooms_by_id(self, room_id):
         """
@@ -122,11 +122,11 @@ class Chatwork(object):
         :return: returns room id's details (json)
         """
         try:
-            get_url = '{}/rooms/{}'.format(self.endpoint, room_id)
+            get_url = "{}/rooms/{}".format(self.endpoint, room_id)
             response = requests.get(get_url, headers=self.headers)
             return response.json()
         except Exception as ex:
-            logger.debug('Get rooms by id error - {}'.format(ex))
+            logger.debug("Get rooms by id error - {}".format(ex))
 
     def delete_rooms_by_id(self, room_id, action):
         """
@@ -135,14 +135,14 @@ class Chatwork(object):
         :param action: leave or delete (str)
         :return: none
         """
-        data = {'action_type': action}
+        data = {"action_type": action}
 
         try:
-            get_url = '{}/rooms/{}'.format(self.endpoint, room_id)
+            get_url = "{}/rooms/{}".format(self.endpoint, room_id)
             response = requests.delete(get_url, data=data, headers=self.headers)
             return response
         except Exception as ex:
-            logger.debug('Get rooms by id error - {}'.format(ex))
+            logger.debug("Get rooms by id error - {}".format(ex))
 
     def get_rooms_members(self, room_id):
         """
@@ -151,11 +151,11 @@ class Chatwork(object):
         :return: returns all members information (json)
         """
         try:
-            get_url = '{}/rooms/{}/members'.format(self.endpoint, room_id)
+            get_url = "{}/rooms/{}/members".format(self.endpoint, room_id)
             response = requests.get(get_url, headers=self.headers)
             return response.json()
         except Exception as ex:
-            logger.debug('Get rooms members error - {}'.format(ex))
+            logger.debug("Get rooms members error - {}".format(ex))
 
     def get_rooms_messages(self, room_id):
         """
@@ -164,11 +164,11 @@ class Chatwork(object):
         :return: returns last 100 entries (json)
         """
         try:
-            get_url = '{}/rooms/{}/messages?'.format(self.endpoint, room_id)
+            get_url = "{}/rooms/{}/messages?".format(self.endpoint, room_id)
             response = requests.get(get_url, headers=self.headers)
             return response.json()
         except Exception as ex:
-            logger.debug('Get rooms messages error - {}'.format(ex))
+            logger.debug("Get rooms messages error - {}".format(ex))
 
     def get_rooms_message_information(self, room_id, message_id):
         """
@@ -178,11 +178,11 @@ class Chatwork(object):
         :return: returns information of specific message (json)
         """
         try:
-            get_url = '{}/rooms/{}/messages/{}'.format(self.endpoint, room_id, message_id)
+            get_url = "{}/rooms/{}/messages/{}".format(self.endpoint, room_id, message_id)
             response = requests.get(get_url, headers=self.headers)
             return response.json()
         except Exception as ex:
-            logger.debug('Get rooms message information error - {}'.format(ex))
+            logger.debug("Get rooms message information error - {}".format(ex))
 
     def add_rooms_task(self, room_id, task_name, time_limit, account_ids):
         """
@@ -193,17 +193,14 @@ class Chatwork(object):
         :param account_ids: list of account ids (integer)
         :return: list of task ids (json)
         """
-        params = {'body': task_name,
-                'limit': time_limit,
-                'to_ids': account_ids
-                }
+        params = {"body": task_name, "limit": time_limit, "to_ids": account_ids}
 
         try:
-            get_url = '{}/rooms/{}/tasks'.format(self.endpoint, room_id)
+            get_url = "{}/rooms/{}/tasks".format(self.endpoint, room_id)
             response = requests.post(get_url, data=params, headers=self.headers)
             return response.json()
         except Exception as ex:
-            logger.debug('Add rooms task error - {}'.format(ex))
+            logger.debug("Add rooms task error - {}".format(ex))
 
     def get_rooms_tasks(self, room_id):
         """
@@ -212,11 +209,11 @@ class Chatwork(object):
         :return: list of the tasks
         """
         try:
-            get_url = '{}/rooms/{}/tasks'.format(self.endpoint, room_id)
+            get_url = "{}/rooms/{}/tasks".format(self.endpoint, room_id)
             response = requests.get(get_url, headers=self.headers)
             return response.json()
         except Exception as ex:
-            logger.debug('Get rooms task error -{}'.format(ex))
+            logger.debug("Get rooms task error -{}".format(ex))
 
     def get_rooms_task_information(self, room_id, task_id):
         """
@@ -226,11 +223,11 @@ class Chatwork(object):
         :return: returns task information (json)
         """
         try:
-            get_url = '{}/rooms/{}/tasks/{}'.format(self.endpoint, room_id, task_id)
+            get_url = "{}/rooms/{}/tasks/{}".format(self.endpoint, room_id, task_id)
             response = requests.get(get_url, headers=self.headers)
             return response.json()
         except Exception as ex:
-            logger.debug('Add rooms task information error - {}'.format(ex))
+            logger.debug("Add rooms task information error - {}".format(ex))
 
     def get_rooms_files(self, room_id):
         """
@@ -239,11 +236,11 @@ class Chatwork(object):
         :return: returns up to 100 entries of files (json)
         """
         try:
-            get_url = '{}/rooms/{}/files'.format(self.endpoint, room_id)
+            get_url = "{}/rooms/{}/files".format(self.endpoint, room_id)
             response = requests.get(get_url, headers=self.headers)
             return response.json()
         except Exception as ex:
-            logger.debug('Get rooms files error - {}'.format(ex))
+            logger.debug("Get rooms files error - {}".format(ex))
 
     def get_rooms_file_information(self, room_id, file_id):
         """
@@ -253,11 +250,11 @@ class Chatwork(object):
         :return: returns files information with a file download link (json)
         """
         try:
-            get_url = '{}/rooms/{}/files/{}?create_download_url=1'.format(self.endpoint, room_id, file_id)
+            get_url = "{}/rooms/{}/files/{}?create_download_url=1".format(self.endpoint, room_id, file_id)
             response = requests.get(get_url, headers=self.headers)
             return response.json()
         except Exception as ex:
-            logger.debug('Get rooms file information error - {}'.format(ex))
+            logger.debug("Get rooms file information error - {}".format(ex))
 
     def create_new_room(self, description, members_member_ids, icon_preset, members_readonly_ids, members_admin_ids, name):
         """
@@ -273,20 +270,21 @@ class Chatwork(object):
         :return: response code
         """
 
-        params = {'description': description,
-                'members_member_ids': members_member_ids,
-                'icon_preset': icon_preset,
-                'members_readonly_ids': members_readonly_ids,
-                'members_admin_ids': members_admin_ids,
-                'name': name
-                }
+        params = {
+            "description": description,
+            "members_member_ids": members_member_ids,
+            "icon_preset": icon_preset,
+            "members_readonly_ids": members_readonly_ids,
+            "members_admin_ids": members_admin_ids,
+            "name": name,
+        }
 
         try:
-            post_url = '{}/rooms'.format(self.endpoint)
+            post_url = "{}/rooms".format(self.endpoint)
             response = requests.post(post_url, data=params, headers=self.headers)
             return response
         except Exception as ex:
-            logger.debug('Create chat group error -{}'.format(ex))
+            logger.debug("Create chat group error -{}".format(ex))
 
     def change_room_info(self, room_id, description, name, icon_preset):
         """
@@ -299,16 +297,13 @@ class Chatwork(object):
                                      security, star, idea, heart, magcup, beer, music, sports, travel]
         :return: response code
         """
-        params = {'description': description,
-                  'name': name,
-                  'icon_preset': icon_preset
-                  }
+        params = {"description": description, "name": name, "icon_preset": icon_preset}
         try:
-            put_url = '{}/rooms/{}'.format(self.endpoint, room_id)
+            put_url = "{}/rooms/{}".format(self.endpoint, room_id)
             response = requests.put(put_url, data=params, headers=self.headers)
             return response
         except Exception as ex:
-            logger.debug('Change room info error -{}'.format(ex))
+            logger.debug("Change room info error -{}".format(ex))
 
     def change_rooms_members(self, room_id, members_admin_ids, members_member_ids, members_readonly_ids):
         """
@@ -320,15 +315,13 @@ class Chatwork(object):
         :return: response code
         """
 
-        params = {'members_admin_ids': members_admin_ids,
-                  'members_member_ids': members_member_ids,
-                  'members_readonly_ids': members_readonly_ids}
+        params = {"members_admin_ids": members_admin_ids, "members_member_ids": members_member_ids, "members_readonly_ids": members_readonly_ids}
         try:
-            put_url = '{}/rooms/{}/members'.format(self.endpoint, room_id)
+            put_url = "{}/rooms/{}/members".format(self.endpoint, room_id)
             response = requests.put(put_url, data=params, headers=self.headers)
             return response
         except Exception as ex:
-            logger.debug('Change rooms member error -{}'.format(ex))
+            logger.debug("Change rooms member error -{}".format(ex))
 
     def get_incoming_requests(self):
         """
@@ -336,11 +329,11 @@ class Chatwork(object):
         :return: return list of of contact approval request (json)
         """
         try:
-            get_url = '{}/incoming_requests'.format(self.endpoint)
+            get_url = "{}/incoming_requests".format(self.endpoint)
             response = requests.get(get_url, headers=self.headers)
             return response.json()
         except Exception as ex:
-            logger.debug('Get incoming requests error - {}'.format(ex))
+            logger.debug("Get incoming requests error - {}".format(ex))
 
     def approve_incoming_requests(self, request_id):
         """
@@ -349,11 +342,11 @@ class Chatwork(object):
         :return: request ids information   (json)
         """
         try:
-            get_url = '{}/incoming_requests/{}'.format(self.endpoint, request_id)
+            get_url = "{}/incoming_requests/{}".format(self.endpoint, request_id)
             response = requests.put(get_url, headers=self.headers)
             return response.json()
         except Exception as ex:
-            logger.debug('Approve  incoming requests error - {}'.format(ex))
+            logger.debug("Approve  incoming requests error - {}".format(ex))
 
     def delete_incoming_requests(self, request_id):
         """
@@ -362,8 +355,15 @@ class Chatwork(object):
         :return: none
         """
         try:
-            get_url = '{}/incoming_requests/{}'.format(self.endpoint, request_id)
+            get_url = "{}/incoming_requests/{}".format(self.endpoint, request_id)
             response = requests.delete(get_url, headers=self.headers)
             return response
         except Exception as ex:
-            logger.debug('Delete incoming requests error - {}'.format(ex))
+            logger.debug("Delete incoming requests error - {}".format(ex))
+
+    def download_file(self, url):
+        try:
+            response = requests.get(url, headers=self.headers)
+            return response
+        except Exception as ex:
+            logger.debug("Add rooms task error - {}".format(ex))
