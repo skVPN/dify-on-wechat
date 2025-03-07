@@ -10,7 +10,7 @@ import tempfile
 from bridge.context import Context, ContextType
 from bridge.reply import Reply, ReplyType
 from channel.chat_channel import ChatChannel
-
+from common.tmp_dir import TmpDir
 from common.log import logger
 from common.singleton import singleton
 from common.tmp_dir import TmpDir
@@ -65,16 +65,38 @@ class ChatWorkChannel(ChatChannel):
         context_type = ContextType.TEXT  # default
         account_id = ""
         receiver = ""
-        content = ""  # for img path
+        isgroup = False
+        is_at = False
+        to_user_id = ""
+        actual_user_id = ""
+        actual_user_nickname=self.client.my_name 
+        rp_qt = ""  # 回复 引用
+        from_=""
+        type=origin_msg['type']  # my ,direct ,group
         if "message_id" in origin_msg:  # 处理消息
             # 如果是回复：{'message_id': '1948626525465219072', 'account': {'account_id': 10124706, 'name': 'chenshi', 'avatar_image_url': 'https://appdata.chatwork.com/avatar/ico_default_blue.png'}, 'body': '[rp aid=10125216 to=388277412-1947558692782219264]William William Thomas\n真的吗', 'send_time': 1741062367, 'update_time': 0}
             # 如果是引用{'message_id': '1948651155563352064', 'account': {'account_id': 10124706, 'name': 'chenshi', 'avatar_image_url': 'https://appdata.chatwork.com/avatar/ico_default_blue.png'}, 'body': '[qt][qtmeta aid=10125216 time=1741068226]嘿嘿，亲爱的客官~我就是您的奶茶小姐姐啦！有什么可爱的需求我可以帮您满足呢？快点告诉我吧，让我来给您调制一杯暖心美味的奶茶吧！嘻嘻~😊💕🍵[/qt]\n胡说', 'send_time': 1741068239, 'update_time': 0}
             # 如果是图片 {'message_id': '1948653001778540544', 'account': {'account_id': 10124706, 'name': 'chenshi', 'avatar_image_url': 'https://appdata.chatwork.com/avatar/ico_default_blue.png'}, 'body': '[info][title][dtext:file_uploaded][/title][preview id=1693905617 ht=111][download:1693905617]image_2025_3_4.png (3.62 KB)[/download][/info]', 'send_time': 1741068679, 'update_time': 0
+            # 群内to {'message_id': '1949742135364431872', 'account': {'account_id': 10125468, 'name': 'chenshi2', 'avatar_image_url': 'https://appdata.chatwork.com/avatar/ico_default_blue.png'}, 'body': '[To:10125216]William William Thomas\nhello ===============', 'send_time': 1741328349, 'update_time': 0}
             from_ = origin_msg["account"]["name"]
             account_id = origin_msg["account"]["account_id"]
-            if from_ == self.client.my_name or origin_msg["send_time"] < self.last_msg_time:  # 自己的和过去的不用回复
-                return
-            body = origin_msg["body"]
+            if from_ == self.client.my_name or type == "my":
+                return   # 自己发的不回
+            if origin_msg["send_time"] < self.last_msg_time:
+                return   # 过期消息不恢
+            if type=="group" and self.client.my_name in origin_msg['body']:
+                isgroup = True
+                is_at = True
+                to_user_id = account_id
+                if 'To' in origin_msg['body']:  # 除了To 还可能 @ （To二次被引用）
+                    actual_user_id =  re.findall("To:(\d+)", origin_msg['body'])[0]
+                if '@' in origin_msg['body']:
+                     actual_user_id =  re.findall("@([\s\S]*?)\\n", origin_msg['body'])[0]
+                if not is_at:  # 群内消息没聊到我的不回
+                    return
+            body_split = origin_msg["body"].split("\n")
+            body = body_split[-1]
+            rp_qt = "\n".join(body_split[:-1])
             self.last_msg_time = origin_msg["send_time"]
             room_id = origin_msg["room_id"]
             receiver = room_id
@@ -84,6 +106,7 @@ class ChatWorkChannel(ChatChannel):
                 context_type = ContextType.FILE
                 if "image" in str(origin_msg):
                     context_type = ContextType.IMAGE
+            
 
         elif "request_id" in origin_msg:  # 处理好友申请
             # [{'request_id': 38566451, 'account_id': 10124706, 'message': 'xxx', 'name': 'chenshi', 'chatwork_id': '', 'organization_id': 7810521, 'organization_name': '', 'department': '', 'avatar_image_url': 'https://appdata.chatwork.com/avatar/ico_default_blue.png'}]
@@ -94,10 +117,13 @@ class ChatWorkChannel(ChatChannel):
             account_id = origin_msg["account_id"]
             receiver = origin_msg["name"]
 
-        msg = SimpleNamespace(from_user_nickname=from_, other_user_nickname=from_, other_user_id=from_, actual_user_id=from_, actual_user_nickname=from_)
+        msg = SimpleNamespace(from_user_nickname=from_, other_user_nickname=from_, other_user_id=from_, actual_user_id=actual_user_id, actual_user_nickname=actual_user_nickname,
+                              to_user_id=to_user_id, at_list="",is_at=is_at,self_display_name=actual_user_nickname,  # 群聊消息补充
+                              rp_qt=rp_qt
+                              )
         msg.Data = {"MsgType": 1, "Content": {"string": body}, "account_id": account_id}
 
-        context = self._compose_context(context_type, body, isgroup=False, msg=msg, receiver=receiver, session_id=room_id)
+        context = self._compose_context(context_type, body, isgroup=isgroup, msg=msg, receiver=receiver, session_id=room_id)
         self.produce(context)
 
     def parse_file(self, room_id, msg):
@@ -107,7 +133,8 @@ class ChatWorkChannel(ChatChannel):
         img_name = re.findall("download:.*?\](.*?)\s", str(msg))[0]
         data = self.client.client.server.get_rooms_file_information(room_id, download_id)
         download_url = data["download_url"]
-        with tempfile.NamedTemporaryFile(mode="wb", delete=False, suffix=img_name) as tmp_file:
+        tmp_file_path = TmpDir().path() + img_name
+        with open(tmp_file_path,'wb') as tmp_file:
             response = self.client.client.server.download_file(download_url)
             tmp_file.write(response.content)
             print(f"临时文件路径: {tmp_file.name}")

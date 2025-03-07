@@ -35,11 +35,19 @@ class ChatWorkClient:
         self.login()
         self.message_api = MessageApi(self.client.server)
         self.name_id_map_file = "name_id_map.json"
+        self.init_id_name_map()
+
+    def init_id_name_map(self):
+        self.id_name_map = {}
+        self.name_id_map = {}
+
         if not os.path.exists(self.name_id_map_file):
-            self.name_map = self.get_contacts()
+            self.id_name_map = self.get_contacts()
         else:
             with shelve.open(self.name_id_map_file) as shelf:
-                self.name_map = dict(shelf)
+                self.id_name_map = dict(shelf)
+        if self.id_name_map:
+            self.name_id_map = dict(zip(self.id_name_map.values(), self.id_name_map.keys()))
 
     # Login API methods
     def login(self):
@@ -96,14 +104,21 @@ class ChatWorkClient:
         return ret
 
     def name_to_id(self, name_str):
-        return self.get_name_id(name_str)
-
+        ret = self.name_id_map.get(name_str)
+        if not ret:
+            self.init_id_name_map()
+            ret = self.name_id_map.get(name_str)
+        return ret 
     def id_to_name(self, id_str):
-        return self.get_name_id(id_str)
-
+        ret = self.id_name_map.get(id_str)
+        if not ret:
+            self.init_id_name_map()
+            ret = self.id_name_map.get(id_str)
+        return ret
+    
     def update_name_map(self, id_str, name_str):
         if isinstance(id_str, int):
             id_str = str(id_str)
-        self.name_map[id_str] = name_str
+        self.id_name_map[id_str] = name_str
         with shelve.open(self.name_id_map_file, writeback=True) as shelf:
             shelf[id_str] = name_str

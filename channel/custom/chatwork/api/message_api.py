@@ -30,12 +30,14 @@ class MessageApi:
                     print("room===", room)
                     if room["unread_num"]:
                         room_id = room["room_id"]
+                        type= room["type"]
                         messages = self.server.get_rooms_messages(room_id)
                         if messages:
                             for message in messages:
                                 logger.info(f"recive msg:{message}")
                                 if isinstance(message, dict):
                                     message["room_id"] = room_id
+                                    message["type"] = type
                                     parse_fuc(message)
                         time.sleep(3)
 
